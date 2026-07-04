@@ -71,6 +71,18 @@ ai-job-scout-agent/
 
 ---
 
+## 🤖 Agentic AI Architecture (Google ADK)
+
+The project leverages **Google's Agent Development Kit (ADK)** to establish a collaborative multi-agent architecture. Under `src/adk/`, a unified `RootAgent` (an ADK `SequentialAgent`) orchestrates four distinct agent layers, wrapping their respective logic:
+1.  **`ProfileAdkAgent`**: Handles user profile validation and preference parsing.
+2.  **`SearchAdkAgent`**: Queries job search pipelines and mock data sources.
+3.  **`RankingAdkAgent`**: Coordinates match-scoring heuristics.
+4.  **`NotificationAdkAgent`**: Saves results and prints formatted console alerts.
+
+To preserve local execution, all agent layers execute completely offline without requiring Google Cloud, Vertex AI, or external network requests. These modular agents are ready to be integrated with Gemini models (`google-genai` SDK) for advanced reasoning, cover letter drafting, and semantic analysis in future phases.
+
+---
+
 ## 🛠️ Setup & Installation
 
 ### Prerequisites
@@ -112,10 +124,20 @@ cp .env.example .env
 
 ## 🏃 Running the Project
 
-### Basic Run
-Execute the standard search using the settings defined in your YAML profile:
+### Offline Mode (Default)
+By default, the agent runs fully offline (no API keys, zero network latency, and free) using local sample JSON files and heuristic match scoring:
 ```bash
 python3 main.py
+```
+
+### Choose Job Postings Source
+You can configure whether the agent searches local mock jobs or contacts a live public API (Arbeitnow):
+```bash
+# Query the local sample jobs JSON file (Default)
+python3 main.py --source sample
+
+# Query the live public Arbeitnow API board and filter for AI/ML jobs locally
+python3 main.py --source arbeitnow
 ```
 
 ### Override Minimum Match Score
@@ -124,6 +146,20 @@ To run a wider or narrower search than the default profile threshold (`0.75`), s
 # Set score threshold to 0.65 to match 3 jobs (capturing Vision Scientist job)
 python3 main.py --min-score 0.65
 ```
+
+### LLM Reasoning Mode (Optional)
+To perform structured LLM-based fit reasoning (strengths, gaps, and application recommendations), pass the `--enable-llm-reasoning` flag:
+```bash
+# Performs Gemini reasoning for matched jobs (requires GEMINI_API_KEY)
+python3 main.py --enable-llm-reasoning
+```
+
+### Optional Gemini Integration & LLM Reasoning
+To perform structured LLM-based fit reasoning, the orchestrators support a `JobFitAgent`. This reasoning runs completely locally using structured placeholders and is **disabled by default** to avoid API costs during local execution.
+
+Additionally, a safe `GeminiClient` wrapper is included under `src/llm/` to integrate with the Google GenAI SDK. This client reads `GEMINI_API_KEY` from the environment or `.env` file but remains **completely optional and disabled** in the main execution pipeline until explicitly enabled. If `GEMINI_API_KEY` is missing and the client is invoked via `--enable-llm-reasoning`, it prints a clear warning and falls back to offline placeholder reasoning.
+
+To run tests validating that the offline pathway does not make external calls, use `pytest`.
 
 ### Run Tests
 Execute the pytest suite to verify all modules work correctly:

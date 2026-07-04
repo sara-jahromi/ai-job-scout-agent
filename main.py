@@ -83,6 +83,11 @@ def main(argv=None):
         action="store_true",
         help="Run health check and diagnostics on project configurations"
     )
+    parser.add_argument(
+        "--enable-llm-reasoning",
+        action="store_true",
+        help="Enable optional Gemini-based job fit reasoning"
+    )
     
     args = parser.parse_args(argv)
     
@@ -92,15 +97,25 @@ def main(argv=None):
             return success
         sys.exit(0 if success else 1)
         
+    enable_llm = args.enable_llm_reasoning
+    if enable_llm:
+        from src.llm.gemini_client import GeminiClient
+        client = GeminiClient()
+        if not client.is_configured():
+            print("⚠️ WARNING: --enable-llm-reasoning is enabled but Gemini API key is not configured.")
+            print("Placeholder reasoning will be used instead.")
+            enable_llm = False
+
     print("==================================================")
     print("🤖 Starting AI Job Scout Agent...")
     print(f"📡 Selected Source: {args.source}")
     if args.min_score is not None:
         print(f"📊 Override Min Match Score: {args.min_score}")
+    print(f"🧠 LLM Reasoning: {'Enabled' if enable_llm else 'Disabled'}")
     print("==================================================")
     
     settings = Settings()
-    agent = JobScoutAgent(settings)
+    agent = JobScoutAgent(settings, enable_llm_reasoning=enable_llm, source_name=args.source)
     
     # Override match score if specified via CLI
     if args.min_score is not None:

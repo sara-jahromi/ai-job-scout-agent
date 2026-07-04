@@ -61,6 +61,32 @@ Formats alert outputs and manages notification payloads. Generates CLI printouts
 
 ---
 
+## 🤖 Multi-Agent Scaffold Design
+
+To prepare for future Gemini-powered reasoning and autonomous decision making, the single orchestrator pipeline is decoupled into a collaborative **multi-agent team** under `src/agents/`:
+
+```
+           [OrchestratorAgent]
+             /      |      \
+            /       |       \
+           ▼        ▼        ▼
+    [SearchAgent] [ProfileAgent] [RankingAgent]
+                            \
+                             ▼
+                     [NotificationAgent]
+```
+
+Each agent has a dedicated cognitive boundary and execution scope:
+*   **`SearchAgent`**: Manages the ingestion logic. Interacts with the active scraper sources and fetches listings.
+*   **`ProfileAgent`**: Loads, validates, and builds semantic embeddings or summaries of user preferences.
+*   **`RankingAgent`**: Connects to matching heuristics or LLMs to rank jobs by relevance score.
+*   **`NotificationAgent`**: Generates notification text templates and controls delivery triggers.
+*   **`OrchestratorAgent`**: The central coordinator that feeds outputs between sub-agents and schedules execution loops.
+
+This multi-agent team has been refactored to support **Google's Agent Development Kit (ADK)** under `src/adk/`. A unified `RootAgent` (an ADK `SequentialAgent`) orchestrates ADK wrappers (`ProfileAdkAgent`, `SearchAdkAgent`, `RankingAdkAgent`, `NotificationAdkAgent`) completely offline. In future iterations, they will be connected to the Google GenAI SDK (`google-genai`) to replace keyword heuristics with Gemini-powered agentic reasoning.
+
+---
+
 ## 🔒 Local-First Design
 
 To align with a **local-first capstone philosophy**, the project implements the following principles:

@@ -12,8 +12,10 @@ logger = logging.getLogger(__name__)
 class JobScoutAgent:
     """Core Agent that orchestrates the job search, extraction, ranking, and notification process."""
     
-    def __init__(self, settings: Settings = None):
+    def __init__(self, settings: Settings = None, enable_llm_reasoning: bool = False, source_name: str = "sample"):
         self.settings = settings or Settings()
+        self.enable_llm_reasoning = enable_llm_reasoning
+        self.source_name = source_name
         self._setup_logging()
         logger.info("Initializing AI Job Scout Agent...")
         
@@ -39,8 +41,13 @@ class JobScoutAgent:
         logger.info("AI Job Scout Agent starting pipeline execution.")
         
         # 1. Fetch job postings from sources
-        logger.info("Step 1: Fetching job postings from SampleJobSource...")
-        source = SampleJobSource(self.settings.sample_jobs_path)
+        logger.info(f"Step 1: Fetching job postings from source: {self.source_name}...")
+        if self.source_name == "arbeitnow":
+            from src.sources.arbeitnow_source import ArbeitnowJobSource
+            source = ArbeitnowJobSource()
+        else:
+            source = SampleJobSource(self.settings.sample_jobs_path)
+            
         jobs = source.search_jobs()
         self.fetched_jobs = jobs
         logger.info(f"Loaded {len(jobs)} job postings.")
@@ -74,6 +81,19 @@ class JobScoutAgent:
         for job in self.matched_jobs:
             logger.info(f"  [{job.match_score:.2f}] {job.title} at {job.company}")
         logger.info("------------------------")
+        
+        # Optional: Run JobFitAgent LLM analysis if enabled
+        if self.enable_llm_reasoning:
+            from src.agents.job_fit_agent import JobFitAgent
+            logger.info("Running optional JobFitAgent LLM-based reasoning for matched jobs...")
+            fit_agent = JobFitAgent(enable_llm_reasoning=self.enable_llm_reasoning)
+            for job in self.matched_jobs:
+                fit_result = fit_agent.analyze_fit(job, self.profile)
+                if not job.extracted_metadata:
+                    job.extracted_metadata = {}
+                job.extracted_metadata["fit_analysis"] = fit_result.model_dump()
+                logger.info(f"Fit analysis for {job.title}: {fit_result.fit_summary}")
+
         
         # 4. Save to storage
         logger.info("Step 4: Persisting matched results to SQLite database...")

@@ -42,3 +42,31 @@ def test_cli_health_check(capsys):
     assert "[PASS] Sample Jobs Loaded" in captured.out
     assert "[PASS] SQLite DB Initialized" in captured.out
     assert "[PASS] Ranking Heuristics Execution" in captured.out
+
+from unittest.mock import patch, MagicMock
+
+def test_cli_enable_llm_reasoning_disabled(capsys):
+    agent = main([])
+    captured = capsys.readouterr()
+    assert "LLM Reasoning: Disabled" in captured.out
+    assert agent.enable_llm_reasoning is False
+
+@patch("src.llm.gemini_client.GeminiClient.is_configured", return_value=False)
+def test_cli_enable_llm_reasoning_enabled_without_api_key(mock_configured, capsys):
+    agent = main(["--enable-llm-reasoning"])
+    captured = capsys.readouterr()
+    assert "WARNING: --enable-llm-reasoning is enabled but Gemini API key is not configured" in captured.out
+    assert "LLM Reasoning: Disabled" in captured.out
+    assert agent.enable_llm_reasoning is False
+
+@patch("src.llm.gemini_client.GeminiClient.is_configured", return_value=True)
+@patch("src.llm.gemini_client.GeminiClient.generate_text", return_value='{"fit_summary": "Mock fit summary", "strengths": ["s1"], "gaps": ["g1"], "apply_recommendation": "recommend"}')
+def test_cli_enable_llm_reasoning_enabled_with_api_key(mock_generate, mock_configured, capsys):
+    agent = main(["--enable-llm-reasoning"])
+    captured = capsys.readouterr()
+    assert "LLM Reasoning: Enabled" in captured.out
+    assert agent.enable_llm_reasoning is True
+    assert len(agent.matched_jobs) > 0
+    for job in agent.matched_jobs:
+        assert job.extracted_metadata["fit_analysis"]["fit_summary"] == "Mock fit summary"
+
