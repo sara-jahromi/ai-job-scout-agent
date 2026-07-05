@@ -32,7 +32,24 @@ class JobNotifier:
                 f"{idx}. {job.title} at {job.company}\n"
                 f"   📍 Location: {job.location}\n"
                 f"   📊 Match Score: {score_val:.2f}\n"
-                f"   🔗 Link: {job.url}\n"
+                f"   🔗 Link: {job.url}"
             )
+            
+            fit_analysis = job.extracted_metadata.get("fit_analysis") if job.extracted_metadata else None
+            if fit_analysis:
+                strengths_val = fit_analysis.get('strengths', [])
+                strengths_str = ", ".join(strengths_val) if isinstance(strengths_val, list) else str(strengths_val)
+                
+                gaps_val = fit_analysis.get('gaps', [])
+                gaps_str = ", ".join(gaps_val) if isinstance(gaps_val, list) else str(gaps_val)
+                
+                lines.append(
+                    f"   🧠 LLM Fit Summary: {fit_analysis.get('fit_summary')}\n"
+                    f"   💪 Strengths: {strengths_str}\n"
+                    f"   ⚠️ Gaps: {gaps_str}\n"
+                    f"   🎯 Apply Recommendation: {fit_analysis.get('apply_recommendation')}\n"
+                    f"   ⭐️ Confidence Score: {fit_analysis.get('confidence_score', 0.0):.2f}"
+                )
+            lines.append("")
         lines.append("==================================================")
         return "\n".join(lines)

@@ -43,3 +43,32 @@ def test_summarize_matches_empty():
     notifier = JobNotifier()
     summary = notifier.summarize_matches([])
     assert summary == "No matched jobs found."
+
+def test_summarize_matches_with_fit_analysis():
+    notifier = JobNotifier()
+    job = JobPosting(
+        title="AI Engineer",
+        company="Tech Corp",
+        location="Remote",
+        description="Write PyTorch code and design LLM agents",
+        url="https://example.com/job-1",
+        source="Test",
+        match_score=0.95,
+        extracted_metadata={
+            "fit_analysis": {
+                "fit_summary": "Strong fit with minor gaps.",
+                "strengths": ["Deep PyTorch knowledge"],
+                "gaps": ["No AWS experience"],
+                "apply_recommendation": "Highly recommend applying.",
+                "confidence_score": 0.92
+            }
+        }
+    )
+    
+    summary = notifier.summarize_matches([job])
+    assert "🧠 LLM Fit Summary: Strong fit with minor gaps." in summary
+    assert "💪 Strengths: Deep PyTorch knowledge" in summary
+    assert "⚠️ Gaps: No AWS experience" in summary
+    assert "🎯 Apply Recommendation: Highly recommend applying." in summary
+    assert "⭐️ Confidence Score: 0.92" in summary
+

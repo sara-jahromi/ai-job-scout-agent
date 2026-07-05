@@ -220,3 +220,62 @@ def test_job_fit_agent_mocked_gemini_response():
     assert "Deep PyTorch knowledge" in result.strengths
     assert "No AWS experience listed" in result.gaps
     assert result.apply_recommendation == "Highly recommend applying immediately."
+
+
+def test_job_fit_agent_mocked_gemini_response_with_confidence():
+    client = GeminiClient(api_key="fake-key")
+    client.generate_text = MagicMock(return_value="""
+    {
+      "fit_summary": "Strong fit with minor gaps.",
+      "strengths": ["Deep PyTorch knowledge"],
+      "gaps": ["No AWS experience"],
+      "apply_recommendation": "Highly recommend applying.",
+      "confidence_score": 0.92
+    }
+    """)
+    
+    agent = JobFitAgent(gemini_client=client, enable_llm_reasoning=True)
+    job = JobPosting(
+        title="AI Engineer",
+        company="Tech Corp",
+        location="Remote",
+        description="Write PyTorch code and design LLM agents",
+        url="https://example.com/job-1",
+        source="sample"
+    )
+    profile = UserProfile(
+        target_roles=["AI Engineer"],
+        skills={"programming_languages": ["Python"]},
+        minimum_match_score=0.7
+    )
+    
+    result = agent.analyze_fit(job, profile)
+    assert result.fit_summary == "Strong fit with minor gaps."
+    assert result.confidence_score == 0.92
+
+def test_job_fit_agent_mocked_invalid_json_fallback():
+    client = GeminiClient(api_key="fake-key")
+    # Return a raw text response that is not JSON
+    client.generate_text = MagicMock(return_value="The candidate is a perfect fit for this job because they have 5 years of Python experience.")
+    
+    agent = JobFitAgent(gemini_client=client, enable_llm_reasoning=True)
+    job = JobPosting(
+        title="AI Engineer",
+        company="Tech Corp",
+        location="Remote",
+        description="Write PyTorch code and design LLM agents",
+        url="https://example.com/job-1",
+        source="sample"
+    )
+    profile = UserProfile(
+        target_roles=["AI Engineer"],
+        skills={"programming_languages": ["Python"]},
+        minimum_match_score=0.7
+    )
+    
+    result = agent.analyze_fit(job, profile)
+    # Checks that it fell back to raw text for the fit_summary instead of crashing
+    assert "The candidate is a perfect fit" in result.fit_summary
+    assert "Unable to parse" in result.strengths[0]
+    assert "Refer to the fit summary" in result.apply_recommendation
+    assert result.confidence_score == 0.5

@@ -12,15 +12,27 @@ class GeminiClient:
     """
     
     def __init__(self, api_key: Optional[str] = None):
-        # Fallback to env variable if not explicitly passed
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY", "")
+        if api_key is not None:
+            self.api_key = api_key
+        else:
+            self.api_key = os.getenv("GEMINI_API_KEY", "")
+            
+        # Ignore placeholder keys
+        if self.api_key.lower().strip() in {
+            "your_actual_key_here",
+            "your_gemini_api_key_here",
+            "your_api_key_here",
+            ""
+        }:
+            self.api_key = ""
+            
         self._client = None
         
         if self.api_key:
             logger.info("Initializing Google GenAI client...")
             self._client = genai.Client(api_key=self.api_key)
         else:
-            logger.warning("GEMINI_API_KEY is not set. GeminiClient will run in unconfigured mode.")
+            logger.warning("GEMINI_API_KEY is not set or is a placeholder. GeminiClient will run in unconfigured mode.")
             
     def is_configured(self) -> bool:
         """Returns True if the client is initialized with an API key."""
