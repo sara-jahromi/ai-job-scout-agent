@@ -1,29 +1,39 @@
 # 🤖 AI Job Scout Agent
 
-A local-first, autonomous AI-powered Job Scout Agent built as a prototype capstone project for the Kaggle/Google Agentic AI course.
-
-The **AI Job Scout Agent** acts as a personalized job search assistant. It runs locally, fetches job listings, extracts structured metadata, ranks matches based on a detailed YAML profile, saves matched listings to a SQLite database, and prints a formatted notifications summary to the console.
+An autonomous, local-first multi-agent job search and candidate-matching assistant that automates target board planning, real-time scraping, match scoring, resume alignment analysis, and cover letter drafting.
 
 ---
 
 ## 📖 Problem Statement
 
-AI/ML practitioners face a fragmented, noisy job market. Manually scanning multiple job boards, identifying whether roles match complex personal criteria (e.g., PhD requirements, specific frameworks, remote preferences, and avoidance of legacy stacks), and tracking application histories is time-consuming.
+For AI/ML practitioners and researchers, navigating today's job market is noisy and fragmented. Manually scanning multiple job boards, matching descriptions against strict personal criteria (such as PhD requirements, preferred frameworks, remote options, and legacy stack exclusions), and tracking application materials is a time-consuming process.
 
-Existing alert systems are broad, keyword-based, and cannot assess semantic alignment or match-quality thresholds. The **AI Job Scout Agent** solves this by establishing a **local-first, automated pipeline** that filters and ranks job postings using customizable user profile criteria.
+Existing alert services are simple keyword-based scrapers that fail to capture semantic alignment or calculate structured match-quality scores. The **AI Job Scout Agent** solves this by establishing an automated, multi-agent pipeline that plans searches, filters postings, evaluates candidate fit, and prepares personalized application materials.
 
 ---
 
-## ✨ Features Implemented
+## 🧠 What Makes This Agentic?
 
-*   **Modular Agent Architecture**: Highly structured directory design (`src/`) separating scraping, parsing, ranking, storage, and notification responsibilities.
-*   **YAML User Profiles**: Configured with PhD-level targeting parameters (target roles, preferred skills, location constraints, and keyword matching lists).
-*   **Sample Data Pipeline**: Standardized mock datasource (`data/sample_jobs.json`) to validate the parser, matcher, persistence, and logger without API calls.
-*   **Keyword Overlap Matcher**: Scoring algorithm analyzing job match percentages across target roles (30%), required skills (40%), and keyword matches (30%), while penalizing unwanted tech stacks.
-*   **Matched Job Persistence**: Auto-initializing SQLite database (`JobDatabase`) that stores matched jobs with columns for skills list serialization and utilizes URLs as a unique index to prevent duplicate entries.
-*   **Pretty Text Summarizer**: `JobNotifier` that outputs a formatted summary of match highlights to the CLI.
-*   **Flexible CLI Support**: Built-in parser (`argparse`) supporting source selection and custom minimum match score overrides for dynamic searches.
-*   **Robust Test Suite**: 17 unit and integration tests covering profile validation, database operations, matcher algorithms, CLI overrides, and agent pipeline loops.
+Unlike traditional linear scripts or basic API wrappers, this system relies on **autonomous multi-agent collaboration** and **reasoning-first architectures**:
+
+1. **Collaborative Framework**: Built on **Google's Agent Development Kit (ADK)** protocols, separating tasks into specialized, modular agent modules that execute sequentially under a central root orchestrator.
+2. **Autonomous Goal Planning**: Features a `PlanningAgent` that analyzes the user's profile and CLI overrides to construct a targeted search plan (defining target sources, search queries, and reasoning) *before* scraping begins.
+3. **Structured Reflection**: Incorporates specialized reflection agents (`JobFitAgent`, `ResumeFitAgent`, and `ApplicationAgent`) to evaluate fit and generate context-aware application materials.
+4. **Adaptive Flow**: Conditionally utilizes LLM reasoning or deterministic fallback heuristics based on environment configurations, maintaining operation even in offline settings.
+
+---
+
+## 👥 Agent Roles
+
+The architecture divides responsibilities among the following specialized agents:
+
+*   **`PlanningAgent`**: Analyzes user profile preferences (target roles, preferred locations, remote preferences) and CLI overrides to autonomously generate a structured `SearchPlan` consisting of the optimal sources, search queries, and planning reasoning.
+*   **`MultiSourceSearchAgent`**: Orchestrates parallel queries across all planned job sources (local sample database, Arbeitnow API, Remotive API), merging results, logging statistics, and deduplicating listings by normalized URLs.
+*   **`RankingAgent` (JobMatcher)**: Computes candidate-to-job matches based on profile parameters (roles weighting 30%, required skills weighting 40%, and custom keywords weighting 30%), applying penalties for legacy technology stacks.
+*   **`JobFitAgent`**: Performs semantic candidate fit evaluation to determine overall alignment, cataloging candidate strengths, identifying skill/experience gaps, and recommending whether to apply.
+*   **`ResumeFitAgent`**: Computes case-insensitive skill overlap maps, calculates missing requirements, formulates transferable strengths, and devises a resume positioning angle for each match.
+*   **`ApplicationAgent`**: Personalized drafting agent that prepares cover letters, referral messages, and LinkedIn outreach notes tailored specifically for the top-matched job opportunity.
+*   **`NotificationAgent` (JobNotifier)**: Formats final outputs, printing execution pipelines, matching metrics, fit analyses, resume angles, and application materials to the console.
 
 ---
 
@@ -33,13 +43,16 @@ Existing alert systems are broad, keyword-based, and cannot assess semantic alig
 graph TD
     A[Start main.py] --> B[Parse CLI Arguments]
     B --> C[Load user_profile.yaml]
-    C --> D[Initialize sqlite DB & Sample Source]
-    D --> E[Fetch job listings from sample json]
-    E --> F[Rank jobs using keyword overlap matcher]
-    F --> G[Filter jobs based on minimum_match_score]
-    G --> H[Save newly matched jobs to SQLite]
-    H --> I[Generate Pretty CLI Notification Summary]
-    I --> J[Done]
+    C --> D[PlanningAgent Resolves Sources & Query]
+    D --> E[MultiSourceSearchAgent Fetches Postings]
+    E --> F[Merge & Deduplicate by URL]
+    F --> G[RankingAgent Heuristic Matching]
+    G --> H[Filter by min_score]
+    H --> I[JobFitAgent LLM Fit Reasoning]
+    I --> J[ResumeFitAgent Overlaps & Angle]
+    J --> K[ApplicationAgent Top-Match Drafts]
+    K --> L[Save to SQLite Storage]
+    L --> M[NotificationAgent CLI Output]
 ```
 
 ---
@@ -48,38 +61,30 @@ graph TD
 
 ```
 ai-job-scout-agent/
-├── config/                 # User preferences
+├── config/                 # User configurations
 │   └── user_profile.yaml   # Target roles, skills, and match thresholds
-├── data/                   # Data directory
-│   ├── sample_jobs.json    # Local test postings database
-│   └── job_scout.db        # SQLite database (created on first run)
-├── docs/                   # Extended documentation
-│   ├── architecture.md     # In-depth architectural designs
-│   └── demo_script.md      # Prototype video demonstration script
-├── src/                    # Main package source
-│   ├── agent/              # Central agent orchestrator
-│   ├── config/             # Settings and YAML loaders
-│   ├── notifications/      # Formatted console outputs
-│   ├── ranking/            # Job match scoring heuristics
-│   ├── sources/            # Scrapers and mockup sources
-│   └── storage/            # SQLite adapters
-├── tests/                  # Pytest verification suites
-├── pyproject.toml          # Project packaging configuration
-├── requirements.txt        # Virtual environment dependencies list
-└── main.py                 # CLI entry point script
+├── data/                   # Data directories
+│   ├── sample_jobs.json    # Local mock postings database
+│   └── job_scout.db        # SQLite persistence database (created automatically)
+├── docs/                   # Documentation
+│   ├── architecture.md     # Architectural designs
+│   ├── architecture_diagram.md # Diagram and data flow explanations
+│   └── demo_script.md      # Video demo walkthrough script
+├── src/                    # Python package source code
+│   ├── adk/                # Root agent ADK orchestration layer
+│   ├── agent/              # Main scout run-loop pipeline
+│   ├── agents/             # Modular agent implementations
+│   ├── config/             # User profile and settings configurations
+│   ├── llm/                # Safe Gemini client wrapper
+│   ├── notifications/      # Notification formatter outputs
+│   ├── ranking/            # Match scoring heuristics
+│   ├── sources/            # Scrapers and API source connectors
+│   └── storage/            # SQLite database adapters
+├── tests/                  # Pytest verification suites (59 test cases)
+├── pyproject.toml          # Package metadata and requirements definitions
+├── requirements.txt        # Virtual environment dependencies
+└── main.py                 # CLI application entry point
 ```
-
----
-
-## 🤖 Agentic AI Architecture (Google ADK)
-
-The project leverages **Google's Agent Development Kit (ADK)** to establish a collaborative multi-agent architecture. Under `src/adk/`, a unified `RootAgent` (an ADK `SequentialAgent`) orchestrates four distinct agent layers, wrapping their respective logic:
-1.  **`ProfileAdkAgent`**: Handles user profile validation and preference parsing.
-2.  **`SearchAdkAgent`**: Queries job search pipelines and mock data sources.
-3.  **`RankingAdkAgent`**: Coordinates match-scoring heuristics.
-4.  **`NotificationAdkAgent`**: Saves results and prints formatted console alerts.
-
-To preserve local execution, all agent layers execute completely offline without requiring Google Cloud, Vertex AI, or external network requests. These modular agents are ready to be integrated with Gemini models (`google-genai` SDK) for advanced reasoning, cover letter drafting, and semantic analysis in future phases.
 
 ---
 
@@ -103,8 +108,10 @@ python3 -m venv .venv
 # Activate (macOS/Linux)
 source .venv/bin/activate
 
-# Activate (Windows)
-.venv\Scripts\activate
+# Activate (Windows Command Prompt)
+.venv\Scripts\activate.bat
+# Or in Windows PowerShell:
+.\.venv\Scripts\Activate.ps1
 ```
 
 ### 3. Install Dependencies
@@ -122,115 +129,53 @@ cp .env.example .env
 
 ---
 
-## 🏃 Running the Project
+## 🏃 Running Demo Commands
 
-### Offline Mode (Default)
-By default, the agent runs fully offline (no API keys, zero network latency, and free) using local sample JSON files and heuristic match scoring:
-```bash
-python3 main.py
-```
+The agent operates as a flexible CLI tool. Run the following demo workflows to test various settings:
 
-### Choose Job Postings Source
-You can configure whether the agent searches local mock jobs or contacts a live public API (Arbeitnow):
+### 1. Offline Mode (Default Sample Source)
+Run the pipeline fully offline using the local mock job database:
 ```bash
-# Query the local sample jobs JSON file (Default)
 python3 main.py --source sample
-
-# Query the live public Arbeitnow API board and filter for AI/ML jobs locally
-python3 main.py --source arbeitnow
 ```
 
-### Override Minimum Match Score
-To run a wider or narrower search than the default profile threshold (`0.75`), specify an override:
+### 2. Multi-Source Search with Custom Matching Score
+Search all active job boards (Sample + Arbeitnow + Remotive), deduplicate listings, and override the minimum match score to a lower threshold (e.g., `0.5`):
 ```bash
-# Set score threshold to 0.65 to match 3 jobs (capturing Vision Scientist job)
-python3 main.py --min-score 0.65
+python3 main.py --source all --min-score 0.5
 ```
 
-### LLM Reasoning Mode (Optional)
-To perform structured LLM-based fit reasoning (strengths, gaps, and application recommendations), pass the `--enable-llm-reasoning` flag:
+### 3. LLM Reasoning Mode
+Enable optional Gemini-powered reasoning to perform deep job fit analysis, resume positioning, and custom cover letter drafting (requires configuring `GEMINI_API_KEY` in your environment):
 ```bash
-# Performs Gemini reasoning for matched jobs (requires GEMINI_API_KEY)
-python3 main.py --enable-llm-reasoning
-```
-
-### Optional Gemini Integration & LLM Reasoning
-To perform structured LLM-based fit reasoning, the orchestrators support a `JobFitAgent`. This reasoning runs completely locally using structured placeholders and is **disabled by default** to avoid API costs during local execution.
-
-Additionally, a safe `GeminiClient` wrapper is included under `src/llm/` to integrate with the Google GenAI SDK. This client reads `GEMINI_API_KEY` from the environment or `.env` file but remains **completely optional and disabled** in the main execution pipeline until explicitly enabled. If `GEMINI_API_KEY` is missing and the client is invoked via `--enable-llm-reasoning`, it prints a clear warning and falls back to offline placeholder reasoning.
-
-To run tests validating that the offline pathway does not make external calls, use `pytest`.
-
-### Run Tests
-Execute the pytest suite to verify all modules work correctly:
-```bash
-pytest
+python3 main.py --source sample --enable-llm-reasoning
 ```
 
 ---
 
-## 📊 Example Command Outputs
+## 🔒 Safety and Cost Controls
 
-### Execution with Default Threshold (`0.75`)
-```text
-==================================================
-🤖 Starting AI Job Scout Agent...
-📡 Selected Source: sample
-==================================================
-2026-07-04 19:21:05,103 - src.agent.scout - INFO - Initializing AI Job Scout Agent...
-2026-07-04 19:21:05,103 - src.agent.scout - INFO - Loading user profile from: /Users/sarajahromi/Desktop/ai-job-scout-agent/config/user_profile.yaml
-2026-07-04 19:21:05,105 - src.agent.scout - INFO - User profile loaded and validated successfully.
-2026-07-04 19:21:05,105 - src.agent.scout - INFO - AI Job Scout Agent starting pipeline execution.
-2026-07-04 19:21:05,105 - src.agent.scout - INFO - Step 1: Fetching job postings from SampleJobSource...
-2026-07-04 19:21:05,105 - src.agent.scout - INFO - Loaded 5 job postings.
-2026-07-04 19:21:05,106 - src.agent.scout - INFO - Step 2: Extracting job metadata (Stubbed)...
-2026-07-04 19:21:05,106 - src.agent.scout - INFO - Step 3: Ranking jobs based on user profile...
-2026-07-04 19:21:05,106 - src.agent.scout - INFO - --- Matching Summary ---
-2026-07-04 19:21:05,106 - src.agent.scout - INFO - Total Jobs Loaded: 5
-2026-07-04 19:21:05,106 - src.agent.scout - INFO - Matched Jobs Count: 2
-2026-07-04 19:21:05,106 - src.agent.scout - INFO - Rejected Jobs Count: 3
-2026-07-04 19:21:05,106 - src.agent.scout - INFO - Matched Job Listings:
-2026-07-04 19:21:05,106 - src.agent.scout - INFO -   [0.78] Machine Learning Engineer - Reinforcement Learning at Autonomous Systems Corp
-2026-07-04 19:21:05,106 - src.agent.scout - INFO -   [0.76] AI Research Engineer, Large Language Models at DeepMind Technologies
-2026-07-04 19:21:05,106 - src.agent.scout - INFO - ------------------------
-2026-07-04 19:21:05,106 - src.agent.scout - INFO - Step 4: Persisting matched results to SQLite database...
-2026-07-04 19:21:05,109 - src.agent.scout - INFO - Saved 2 new matched jobs to the database (out of 2 matched).
-2026-07-04 19:21:05,109 - src.agent.scout - INFO - Step 5: Generating notification summary...
-2026-07-04 19:21:05,109 - src.agent.scout - INFO - 
-==================================================
-📢 AI JOB SCOUT: NEW MATCHES FOUND!
-==================================================
-1. Machine Learning Engineer - Reinforcement Learning at Autonomous Systems Corp
-   📍 Location: Seattle, WA
-   📊 Match Score: 0.78
-   🔗 Link: https://example.com/jobs/asc-ml-engineer-rl
+This application is designed to be production-safe, private, and cost-controlled:
 
-2. AI Research Engineer, Large Language Models at DeepMind Technologies
-   📍 Location: San Francisco, CA
-   📊 Match Score: 0.76
-   🔗 Link: https://example.com/jobs/deepmind-ai-research-engineer
-
-==================================================
-2026-07-04 19:21:05,109 - src.agent.scout - INFO - Pipeline executed successfully.
-==================================================
-🎯 Target Roles: Machine Learning Engineer, ML Engineer, AI Research Engineer, Applied Scientist, Research Scientist, AI Engineer
-📊 Minimum Match Score: 0.75
-==================================================
-==================================================
-🤖 Agent execution finished.
-==================================================
-```
+*   **Local-First Design**: The agent executes fully locally on your machine by default. High-cost API operations are completely avoided unless explicitly requested.
+*   **Gemini Disabled by Default**: LLM reasoning features are optional. If the `--enable-llm-reasoning` flag is absent, the agent uses fast, free deterministic fallback logic.
+*   **No Cloud Deployments**: Runs as a standard CLI script. There is no requirement for paid cloud servers, VM setups, or third-party database subscriptions.
+*   **Secure API Keys**: If using Gemini, the API key is read solely from local environment variables or a git-ignored `.env` file, preventing accidental exposure of credentials.
 
 ---
 
-## 🗺️ Roadmap & Future Work
+## ⚠️ Current Limitations
 
-*   **Gemini API Integrations (Phase 2 & 3)**:
-    *   Deploy **Google GenAI SDK (`google-genai`)** to parse unformatted web scraping job descriptions into typed schema models.
-    *   Transition from heuristic keyword mapping to LLM-guided **semantic candidate-to-job matching** (e.g. evaluating context of experience and research contributions).
-*   **Web Scrapers & Real API Sources**:
-    *   Develop API search scrapers and integrations for LinkedIn, Indeed, Greenhouse, Lever, Remotive, Arbeitnow, Apify, and Google Search API to load real-time AI/ML opportunities.
-*   **Automatic Cron Schedules**:
-    *   Establish background daemon tasks to execute searches daily.
-*   **Real Notifications**:
-    *   Implement SMTP mail dispatches and Slack Webhooks to immediately alert when top-tier listings are discovered.
+*   **Mock Resume Proxy**: Evaluates candidate fit based on the text list in `user_profile.yaml` rather than extracting details from an uploaded PDF or Word resume.
+*   **Public Feeds Only**: Connects to public, unauthenticated feed endpoints which do not require key authorization.
+*   **Local Substring Matching**: By default, deterministic matching matches exact substring queries, which does not capture deep semantic relations without enabling LLM mode.
+
+---
+
+## 🗺️ Future Work
+
+*   **Resume PDF Parsing**: Direct extraction and ingestion of candidate profile parameters from uploaded PDF/Word resume documents.
+*   **Email & Slack Notifications**: Real-time push alert integrations utilizing Slack webhooks and SMTP mail dispatches.
+*   **Scheduling & Monitoring**: Integrated cron task scheduling and heartbeat health check monitoring services.
+*   **More Job Boards**: Authenticated scrapers and API adapters for additional job boards (e.g., LinkedIn, Greenhouse, Lever).
+*   **UI Dashboard**: A local visual web application (e.g., Streamlit or React) to explore, filter, and track applications.
