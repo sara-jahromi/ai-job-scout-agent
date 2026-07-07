@@ -96,7 +96,7 @@ ai-job-scout-agent/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/ai-job-scout-agent.git
+git clone https://github.com/sara-jahromi/ai-job-scout-agent.git
 cd ai-job-scout-agent
 ```
 
