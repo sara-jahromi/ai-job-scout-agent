@@ -26,12 +26,13 @@ remote_preference: "Remote"
 required_keywords:
   - "Python"
   - "PyTorch"
+  
 
 nice_to_have_keywords:
+  - "Machine Learning"
   - "LLM"
   - "Generative AI"
   - "Transformers"
-  - "RLHF"
   - "Agentic AI"
   - "RAG"
   
@@ -44,19 +45,18 @@ avoid_keywords:
 # User Credentials
 education:
   degree: "PhD"
-  field: "Computer Science"
+  field: "Electrical Engineering"
   specialization: "Artificial Intelligence / Machine Learning"
-  thesis_topic: "Scalable Training of Large Language Models and Reinforcement Learning from Human Feedback"
+  thesis_topic: "Reliable Machine Learning and Information Retrieval under Uncertainty"
 
 skills:
   programming_languages:
     - "Python"
-    - "C++"
+    - "Matlab"
     - "SQL"
   frameworks_libraries:
     - "PyTorch"
     - "Hugging Face"
-    - "JAX"
     - "NumPy"
     - "Pandas"
     - "Scikit-Learn"
@@ -64,12 +64,12 @@ skills:
     - "Deep Learning"
     - "Natural Language Processing (NLP)"
     - "Large Language Models (LLMs)"
-    - "Reinforcement Learning (RL)"
+
 
 experience_summary: >
-  PhD graduate with 4+ years of research experience in Deep Learning and Natural Language Processing.
-  Published in top-tier conferences (NeurIPS, ICML, ACL). Expert in optimizing, fine-tuning, and evaluating
-  large generative models. Looking for applied research and engineering roles in AI.
+  Machine Learning researcher with a Ph.D. in Electrical Engineering and experience developing robust decentralized learning, semantic retrieval, and AI/ML-driven network optimization methods. 
+  First or corresponding author of research spanning information retrieval under token erasures, Byzantine-resilient distributed computation, and energy-aware 6G systems. 
+  Combines mathematical modeling with hands-on implementation in Python, PyTorch, Hugging Face, and Gurobi.
 
 # Minimum overall score required to trigger notifications (scale from 0.0 to 1.0)
 minimum_match_score: 0.75
